@@ -1,5 +1,9 @@
 import 'package:device_preview/device_preview.dart';
+import 'package:easy_booking/widget/bus_list.dart';
+import 'package:easy_booking/widget/get_started.dart';
+import 'package:easy_booking/widget/login.dart';
 import 'package:easy_booking/widget/ui_example_03-a.dart';
+import 'package:easy_booking/widget/ui_example_05.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 

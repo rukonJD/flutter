@@ -1,7 +1,8 @@
 import 'dart:convert';  // For JSON encoding/decoding
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart'; // For date formatting
+import 'bus_list.dart'; // Import the BusListPage
 
 class UIEX03Ft extends StatefulWidget {
   const UIEX03Ft({Key? key}) : super(key: key);
@@ -11,18 +12,11 @@ class UIEX03Ft extends StatefulWidget {
 }
 
 class _UIEX03FtState extends State<UIEX03Ft> {
-  // Data to store the bus search results
-  List<dynamic> busResults = [];
   bool isLoading = false;
 
   final TextEditingController sourceController = TextEditingController();
   final TextEditingController destinationController = TextEditingController();
   final TextEditingController dateController = TextEditingController();
-
-  // Focus nodes for better focus management
-  final FocusNode sourceFocusNode = FocusNode();
-  final FocusNode destinationFocusNode = FocusNode();
-  final FocusNode dateFocusNode = FocusNode();
 
   // Function to fetch bus data from the API
   Future<void> fetchBusData(String source, String destination, String date) async {
@@ -36,30 +30,33 @@ class _UIEX03FtState extends State<UIEX03Ft> {
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
-        // Print the response body to debug
-        print('Response body: ${response.body}');
-        final data = json.decode(response.body);  // Decode the response
+        final data = json.decode(response.body);
 
-        // Now assume the response is a list of buses directly, not an object with "bus_list"
+        // Check if the response is a list of buses
         if (data is List) {
           setState(() {
-            busResults = data;  // Directly use the list if it's a list of buses
             isLoading = false;
           });
+
+          // Navigate to the bus list page and pass the bus data
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => BusListPage(busResults: data), // Pass the data
+            ),
+          );
         } else {
           setState(() {
             isLoading = false;
           });
-          print('Error: Expected a list of buses');
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('API response is invalid: Expected a list')),
+            SnackBar(content: Text('Error: Expected a list of buses')),
           );
         }
       } else {
         setState(() {
           isLoading = false;
         });
-        print('Failed to load bus data');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load bus data')),
         );
@@ -75,150 +72,164 @@ class _UIEX03FtState extends State<UIEX03Ft> {
     }
   }
 
+  // Function to open the date picker
+  Future<void> _selectDate(BuildContext context) async {
+    DateTime currentDate = DateTime.now();
+    DateTime selectedDate = await showDatePicker(
+      context: context,
+      initialDate: currentDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    ) ?? currentDate;
+
+    // Format the selected date and update the controller
+    setState(() {
+      dateController.text = DateFormat('yyyy-MM-dd').format(selectedDate);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     var w = MediaQuery.of(context).size.width;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Color(0xffd44d57),
-        title: Text("Bus Tickets", style: TextStyle(color: Colors.white)),
+        title: Text("Easy Booking", style: TextStyle(color: Colors.white)),
+        elevation: 0,
       ),
-      body: SingleChildScrollView(  // Wrap the entire body in a scroll view to prevent overflow
+      body: SingleChildScrollView(
         child: Column(
           children: [
-            Stack(
-              children: [
-                Positioned(
-                  child: Container(
-                    color: Color(0xffd44d57),
-                    height: 388,
-                    width: w,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Positioned(
-                          left: 10,
-                          top: 20,
-                          child: Text(
-                            "Bus tickets",
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                fontSize: 22),
-                          ),
-                        ),
-                        Positioned(
-                          top: 70,
-                          child: Center(
-                            child: Container(
-                              alignment: Alignment.center,
-                              width: w - 20,
-                              height: 300,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Column(  // Use a Column to hold the input fields and button
-                                children: [
-                                  // Source TextField
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: TextField(
-                                      controller: sourceController,
-                                      focusNode: sourceFocusNode,
-                                      decoration: InputDecoration(
-                                        labelText: 'Enter Source',
-                                        border: OutlineInputBorder(),
-                                      ),
-                                      onTap: () {
-                                        FocusScope.of(context).requestFocus(sourceFocusNode);
-                                      },
-                                    ),
-                                  ),
-                                  // Destination TextField
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: TextField(
-                                      controller: destinationController,
-                                      focusNode: destinationFocusNode,
-                                      decoration: InputDecoration(
-                                        labelText: 'Enter Destination',
-                                        border: OutlineInputBorder(),
-                                      ),
-                                      onTap: () {
-                                        FocusScope.of(context).requestFocus(destinationFocusNode);
-                                      },
-                                    ),
-                                  ),
-                                  // Date TextField
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: TextField(
-                                      controller: dateController,
-                                      focusNode: dateFocusNode,
-                                      decoration: InputDecoration(
-                                        labelText: 'Enter Date (YYYY-MM-DD)',
-                                        border: OutlineInputBorder(),
-                                      ),
-                                      onTap: () {
-                                        FocusScope.of(context).requestFocus(dateFocusNode);
-                                      },
-                                    ),
-                                  ),
-                                  // Search Button
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        String source = sourceController.text;
-                                        String destination = destinationController.text;
-                                        String date = dateController.text;
-
-                                        if (source.isNotEmpty && destination.isNotEmpty && date.isNotEmpty) {
-                                          fetchBusData(source, destination, date);
-                                        } else {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                              SnackBar(content: Text("Please fill all fields"))
-                                          );
-                                        }
-                                      },
-                                      child: Text('Search'),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 20),
-            if (isLoading)
-              Center(child: CircularProgressIndicator())
-            else
-            // Make the ListView scrollable
-              Container(
-                height: 300,  // Set a fixed height for the list view
-                child: ListView.builder(
-                  itemCount: busResults.length,
-                  itemBuilder: (context, index) {
-                    var bus = busResults[index];
-                    return Card(
-                      elevation: 5,
-                      margin: EdgeInsets.all(10),
-                      child: ListTile(
-                        title: Text("Bus Name: ${bus['busNo']}"),
-                        subtitle: Text("Departure: ${bus['arrivalDate']}"),
-                        trailing: Text("Fare: ${bus['price']}"),
-                      ),
-                    );
-                  },
+            // Top banner section
+            Container(
+              width: w,
+              height: 320,
+              decoration: BoxDecoration(
+                color: Color(0xffd44d57),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
                 ),
               ),
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Bus Tickets",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 28,
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    Text(
+                      "Search for buses easily by entering your trip details.",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            SizedBox(height: 30),
+
+            // Bus search form section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Column(
+                children: [
+                  // Source Input Field
+                  TextField(
+                    controller: sourceController,
+                    decoration: InputDecoration(
+                      labelText: 'Source',
+                      hintText: 'Enter source city',
+                      prefixIcon: Icon(Icons.location_on),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                      fillColor: Colors.black26,
+                    ),
+                  ),
+                  SizedBox(height: 20),
+
+                  // Destination Input Field
+                  TextField(
+                    controller: destinationController,
+                    decoration: InputDecoration(
+                      labelText: 'Destination',
+                      hintText: 'Enter destination city',
+                      prefixIcon: Icon(Icons.location_on),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                      fillColor: Colors.black26,
+                    ),
+                  ),
+                  SizedBox(height: 20),
+
+                  // Date Input Field with Date Picker
+                  TextField(
+                    controller: dateController,
+                    readOnly: true, // Make the field read-only
+                    decoration: InputDecoration(
+                      labelText: 'Date',
+                      hintText: 'YYYY-MM-DD',
+                      prefixIcon: Icon(Icons.calendar_today),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                      fillColor: Colors.black26,
+                    ),
+                    onTap: () => _selectDate(context), // Open the date picker when tapped
+                  ),
+                  SizedBox(height: 30),
+
+                  // Search Button
+                  ElevatedButton(
+                    onPressed: () {
+                      String source = sourceController.text;
+                      String destination = destinationController.text;
+                      String date = dateController.text;
+
+                      if (source.isNotEmpty && destination.isNotEmpty && date.isNotEmpty) {
+                        fetchBusData(source, destination, date);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("Please fill all fields")),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(vertical: 16), backgroundColor: Color(0xffd44d57),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      'Search',
+                      style: TextStyle(fontSize: 18, color: Colors.white),
+                    ),
+                  ),
+
+                  // Loading indicator
+                  if (isLoading) ...[
+                    SizedBox(height: 20),
+                    Center(child: CircularProgressIndicator()),
+                  ],
+                ],
+              ),
+            ),
           ],
         ),
       ),

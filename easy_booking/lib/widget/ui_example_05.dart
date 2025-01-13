@@ -1,475 +1,185 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
+import 'package:http/http.dart' as http;
 
 class RedBusSeatUI extends StatefulWidget {
-  const RedBusSeatUI({Key? key}) : super(key: key);
+  final int busId;
+  final String date;
+
+  const RedBusSeatUI({Key? key, required this.busId, required this.date}) : super(key: key);
 
   @override
   _RedBusSeatUIState createState() => _RedBusSeatUIState();
 }
 
 class _RedBusSeatUIState extends State<RedBusSeatUI> {
+  List<Map<String, dynamic>> seats = [];
+  List<int> selectedSeats = [];
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize with seat statuses (mock data for the sake of demonstration)
+    seats = List.generate(20, (index) {
+      return {'id': index + 1, 'status': 'available'};
+    });
+  }
+
+  void toggleSeatSelection(int seatId) {
+    setState(() {
+      var seat = seats.firstWhere((seat) => seat['id'] == seatId);
+      if (seat['status'] == 'available') {
+        seat['status'] = 'selected';
+        selectedSeats.add(seatId);
+      } else if (seat['status'] == 'selected') {
+        seat['status'] = 'available';
+        selectedSeats.remove(seatId);
+      }
+    });
+  }
+
+  Future<void> bookSeats() async {
+    if (selectedSeats.isEmpty) {
+      // If no seats are selected, show a warning message
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text("No Seats Selected"),
+          content: Text("Please select at least one seat to book."),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text("OK"),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    // Send the API request to book the selected seats
+    final url = 'http://localhost:8080/customer/api/bookSeat';
+    final response = await http.post(
+      Uri.parse(url),
+      body: {
+        'busId': widget.busId.toString(),
+        'date': widget.date,
+        'noOfSeats': selectedSeats.length.toString(),
+        // You can pass seat IDs if needed
+        'seats': selectedSeats.join(','),
+      },
+    );
+
+    if (response.statusCode == 200) {
+      // Successful booking
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text("Booking Successful"),
+          content: Text("Your seats have been booked successfully."),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text("OK"),
+            ),
+          ],
+        ),
+      );
+    } else {
+      // Handle error
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text("Booking Failed"),
+          content: Text("There was an issue with your booking. Please try again."),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text("OK"),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: Text("Zing Bus"),
+        title: Text("Easy Booking"),
         backgroundColor: Color(0xffd44d57),
-
       ),
-      body: Container(
-        child: Stack(
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Positioned(
-                top: 200,
-                left: 100,
-                child: Card(
-                  elevation: 10,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+            Text(
+              'Bus ID: ${widget.busId}, Date: ${widget.date}',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 20),
+            // Wrapping the GridView inside a SingleChildScrollView to prevent touch conflicts
+            Expanded(
+              child: SingleChildScrollView(
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 4,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
                   ),
-                  child:
-                  Container(
-                    margin: EdgeInsets.all(12),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
+                  itemCount: seats.length,
+                  itemBuilder: (context, index) {
+                    var seat = seats[index];
+                    Color seatColor;
+                    if (seat['status'] == 'available') {
+                      seatColor = Colors.green;
+                    } else if (seat['status'] == 'selected') {
+                      seatColor = Colors.blue;
+                    } else {
+                      seatColor = Colors.red;
+                    }
 
-                            SizedBox(
-                              width: 150,
-                            ),
-                            Icon(Icons.circle)
-                          ],
+                    return GestureDetector(
+                      onTap: () => toggleSeatSelection(seat['id']),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: seatColor,
+                          borderRadius: BorderRadius.circular(5),
+                          border: Border.all(color: Colors.black),
                         ),
-                        SizedBox(
-                          height: 10,
-                        ),
-                        Row(
-                          children: [
-                            _Full_gents_seatLayout(),
-                            _Full_gents_seatLayout(),
-                            SizedBox(
-                              width: 40,
-                            ),
-                            _Vacant_seatLayout(),
-                            _Full_gents_seatLayout()
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            _Full_ladies_seatLayout(),
-                            _Vacant_seatLayout(),
-                            SizedBox(
-                              width: 40,
-                            ),
-                            _Full_gents_seatLayout(),
-                            _Full_gents_seatLayout()
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            _Full_ladies_seatLayout(),
-                            _Vacant_seatLayout(),
-                            SizedBox(
-                              width: 40,
-                            ),
-                            _Full_gents_seatLayout(),
-                            _Full_gents_seatLayout()
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            _Vacant_seatLayout(),
-                            _Vacant_seatLayout(),
-                            SizedBox(
-                              width: 40,
-                            ),
-                            _Full_gents_seatLayout(),
-                            _Vacant_seatLayout()
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            _Vacant_seatLayout(),
-                            _Vacant_seatLayout(),
-                            SizedBox(
-                              width: 40,
-                            ),
-                            _Selected_Seat(),
-                            _Full_gents_seatLayout()
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            _Full_ladies_seatLayout(),
-                            _Vacant_seatLayout(),
-                            SizedBox(
-                              width: 40,
-                            ),
-                            _Full_gents_seatLayout(),
-                            _Full_gents_seatLayout()
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            _Full_ladies_seatLayout(),
-                            _Vacant_seatLayout(),
-                            SizedBox(
-                              width: 40,
-                            ),
-                            _Full_ladies_seatLayout(),
-                            _Full_ladies_seatLayout()
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            _Vacant_seatLayout(),
-                            _Vacant_seatLayout(),
-                            SizedBox(
-                              width: 40,
-                            ),
-                            _Full_gents_seatLayout(),
-                            _Vacant_seatLayout()
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            _Vacant_seatLayout(),
-                            _Vacant_seatLayout(),
-                            _Vacant_seatLayout(),
-                            _Vacant_seatLayout(),
-                            _Vacant_seatLayout()
-                          ],
-                        )
-                      ],
-                    ),
-                  ),
-                )),
-
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: bookSeats, // Call bookSeats function
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: Color(0xffd44d57),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+              child: Text("Confirm Booking"),
+            ),
           ],
         ),
       ),
     );
   }
-
-  Widget _Vacant_seatLayout(){
-    return Container(
-      width: 40,
-      height: 40,
-      child: Stack(
-        children: [
-          Positioned(
-            top: 5,
-            bottom: 5,
-            left: 5,
-            right: 5,
-            child:SizedBox(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Colors.black,
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(5),
-                    color: Colors.white
-                ),
-              ),
-            ),),
-          Positioned(
-            top: 29,
-            bottom: 5,
-            left: 5,
-            right: 5,
-            child:SizedBox(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Colors.black,
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(5),
-                    color: Colors.white
-                ),
-              ),
-            ),),
-          Positioned(
-            top: 15,
-            bottom: 5,
-            left: 4,
-            right: 30,
-            child:SizedBox(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Colors.black,
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(5),
-                    color: Colors.white
-                ),
-              ),
-            ),),
-          Positioned(
-            top: 15,
-            bottom: 5,
-            left: 30,
-            right: 4,
-            child:SizedBox(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Colors.black,
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(5),
-                    color: Colors.white
-                ),
-              ),
-            ),)
-
-        ],
-      ),
-    );
-  }
-  Widget _Full_gents_seatLayout(){
-    return Container(
-      width: 40,
-      height: 40,
-      child: Stack(
-        children: [
-          Positioned(
-            top: 5,
-            bottom: 5,
-            left: 5,
-            right: 5,
-            child:SizedBox(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Colors.black,
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(5),
-                    color: Colors.grey.shade300
-                ),
-              ),
-            ),),
-          Positioned(
-            top: 29,
-            bottom: 5,
-            left: 5,
-            right: 5,
-            child:SizedBox(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Colors.black,
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(5),
-                    color: Colors.blueAccent
-                ),
-              ),
-            ),),
-          Positioned(
-            top: 15,
-            bottom: 5,
-            left: 4,
-            right: 30,
-            child:SizedBox(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Colors.black,
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(5),
-                    color: Colors.blueAccent
-                ),
-              ),
-            ),),
-          Positioned(
-            top: 15,
-            bottom: 5,
-            left: 30,
-            right: 4,
-            child:SizedBox(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Colors.black,
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(5),
-                    color: Colors.blueAccent
-                ),
-              ),
-            ),)
-
-        ],
-      ),
-    );
-  }
-  Widget _Full_ladies_seatLayout(){
-    return Container(
-      width: 40,
-      height: 40,
-      child: Stack(
-        children: [
-          Positioned(
-            top: 5,
-            bottom: 5,
-            left: 5,
-            right: 5,
-            child:SizedBox(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Colors.black,
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(5),
-                    color: Colors.grey.shade300
-                ),
-              ),
-            ),),
-          Positioned(
-            top: 29,
-            bottom: 5,
-            left: 5,
-            right: 5,
-            child:SizedBox(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Colors.black,
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(5),
-                    color: Colors.cyan
-                ),
-              ),
-            ),),
-          Positioned(
-            top: 15,
-            bottom: 5,
-            left: 4,
-            right: 30,
-            child:SizedBox(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Colors.black,
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(5),
-                    color: Colors.cyan
-                ),
-              ),
-            ),),
-          Positioned(
-            top: 15,
-            bottom: 5,
-            left: 30,
-            right: 4,
-            child:SizedBox(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Colors.black,
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(5),
-                    color: Colors.cyan
-                ),
-              ),
-            ),)
-
-        ],
-      ),
-    );
-  }
-  Widget _Selected_Seat(){
-    return Container(
-      width: 40,
-      height: 40,
-      child: Stack(
-        children: [
-          Positioned(
-            top: 5,
-            bottom: 5,
-            left: 5,
-            right: 5,
-            child:SizedBox(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Colors.black,
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(5),
-                    color: Colors.lightGreenAccent
-                ),
-              ),
-            ),),
-          Positioned(
-            top: 29,
-            bottom: 5,
-            left: 5,
-            right: 5,
-            child:SizedBox(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Colors.black,
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(5),
-                    color: Colors.lightGreenAccent
-                ),
-              ),
-            ),),
-          Positioned(
-            top: 15,
-            bottom: 5,
-            left: 4,
-            right: 30,
-            child:SizedBox(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Colors.black,
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(5),
-                    color: Colors.lightGreenAccent
-                ),
-              ),
-            ),),
-          Positioned(
-            top: 15,
-            bottom: 5,
-            left: 30,
-            right: 4,
-            child:SizedBox(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Colors.black,
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(5),
-                    color: Colors.lightGreenAccent
-                ),
-              ),
-            ),)
-
-        ],
-      ),
-    );
-  }
-
 }
