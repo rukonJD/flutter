@@ -202,6 +202,7 @@ class _UIEX03FtState extends State<UIEX03Ft> {
                       String destination = destinationController.text;
                       String date = dateController.text;
 
+
                       if (source.isNotEmpty && destination.isNotEmpty && date.isNotEmpty) {
                         fetchBusData(source, destination, date);
                       } else {

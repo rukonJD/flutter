@@ -104,7 +104,11 @@ class BusListPage extends StatelessWidget {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => RedBusSeatUI(busId: bus['busId'], date: bus['destinationDate']),
+                                builder: (context) => RedBusSeatUI(
+                                    busId: bus['id'],
+                                    date: bus['destinationDate'],
+                                    allseats: bus['seats']
+                                ),
                               ),
                             );
                           },

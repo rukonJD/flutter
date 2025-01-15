@@ -1,11 +1,15 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 class RedBusSeatUI extends StatefulWidget {
   final int busId;
   final String date;
+  final List allseats;
 
-  const RedBusSeatUI({Key? key, required this.busId, required this.date}) : super(key: key);
+
+  const RedBusSeatUI({Key? key, required this.busId, required this.date,required this.allseats}) : super(key: key);
 
   @override
   _RedBusSeatUIState createState() => _RedBusSeatUIState();
@@ -14,19 +18,34 @@ class RedBusSeatUI extends StatefulWidget {
 class _RedBusSeatUIState extends State<RedBusSeatUI> {
   List<Map<String, dynamic>> seats = [];
   List<int> selectedSeats = [];
+  List selectedSit=[];
 
   @override
   void initState() {
     super.initState();
+    getSeats();
     // Initialize with seat statuses (mock data for the sake of demonstration)
-    seats = List.generate(20, (index) {
-      return {'id': index + 1, 'status': 'available'};
-    });
+    // seats = List.generate(20, (index) {
+    //   return {'id': index + 1, 'status': 'available'};
+    // });
   }
 
+  void getSeats() async{
+
+    var getBusData= await http.get(Uri.parse("http://localhost:8080/customer/api/viewSeats/${widget.busId}?date=2025-02-25"));
+    var decodeSeat = jsonDecode(getBusData.body);
+
+    setState(() {
+      seats = List<Map<String, dynamic>> .from(decodeSeat);
+    });
+
+    print("The fetched data :  ${decodeSeat[0].seatNo}");
+    
+  }
+  
   void toggleSeatSelection(int seatId) {
     setState(() {
-      var seat = seats.firstWhere((seat) => seat['id'] == seatId);
+      var seat = seats.firstWhere((seat) => seat['seatNo'] == seatId);
       if (seat['status'] == 'available') {
         seat['status'] = 'selected';
         selectedSeats.add(seatId);
@@ -58,26 +77,43 @@ class _RedBusSeatUIState extends State<RedBusSeatUI> {
       return;
     }
 
-    // Send the API request to book the selected seats
-    final url = 'http://localhost:8080/customer/api/bookSeat';
-    final response = await http.post(
-      Uri.parse(url),
-      body: {
-        'busId': widget.busId.toString(),
-        'date': widget.date,
-        'noOfSeats': selectedSeats.length.toString(),
-        // You can pass seat IDs if needed
-        'seats': selectedSeats.join(','),
-      },
+    // Show a loading dialog or indicator before sending requests
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Booking Seats"),
+        content: CircularProgressIndicator(),
+      ),
     );
 
-    if (response.statusCode == 200) {
-      // Successful booking
+    // Iterate over the selectedSeats array and send a POST request for each seat
+    try {
+      await Future.forEach(selectedSeats, (seatNo) async {
+        final url = 'http://localhost:8080/customer/api/book-seat';
+        final response = await http.post(
+          Uri.parse(url),
+          body: {
+            'busId': widget.busId.toString(),
+            'bookDate': widget.date,
+            'seatNo': seatNo.toString(), // Sending one seat at a time
+          },
+        );
+
+        // Handle the response for each seat
+        if (response.statusCode == 200) {
+          print("Seat $seatNo booked successfully.");
+        } else {
+          print("Failed to book seat $seatNo: ${response.body}");
+        }
+      });
+
+      // After booking all seats, show a success message
+      Navigator.of(context).pop(); // Close the loading dialog
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
           title: Text("Booking Successful"),
-          content: Text("Your seats have been booked successfully."),
+          content: Text("All selected seats have been booked successfully."),
           actions: [
             TextButton(
               onPressed: () {
@@ -88,8 +124,9 @@ class _RedBusSeatUIState extends State<RedBusSeatUI> {
           ],
         ),
       );
-    } else {
-      // Handle error
+    } catch (e) {
+      // In case of any error
+      Navigator.of(context).pop(); // Close the loading dialog
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -105,12 +142,16 @@ class _RedBusSeatUIState extends State<RedBusSeatUI> {
           ],
         ),
       );
+      print('Error: $e');
     }
+    getSeats();
   }
+
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return seats != null?
+      Scaffold(
       appBar: AppBar(
         centerTitle: true,
         title: Text("Easy Booking"),
@@ -122,7 +163,7 @@ class _RedBusSeatUIState extends State<RedBusSeatUI> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
-              'Bus ID: ${widget.busId}, Date: ${widget.date}',
+              'Bus ID: ${widget.busId}, Date: ${widget.date}, allseats:${seats.length}',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 20),
@@ -140,24 +181,41 @@ class _RedBusSeatUIState extends State<RedBusSeatUI> {
                   itemBuilder: (context, index) {
                     var seat = seats[index];
                     Color seatColor;
-                    if (seat['status'] == 'available') {
-                      seatColor = Colors.green;
-                    } else if (seat['status'] == 'selected') {
+                    if (seats[index]['booked']) {
+                      seatColor = Colors.red;
+                    } else if (!seats[index]['booked']) {
                       seatColor = Colors.blue;
                     } else {
                       seatColor = Colors.red;
                     }
 
                     return GestureDetector(
-                      onTap: () => toggleSeatSelection(seat['id']),
+                      onTap: (){
+                        // print(seat['seatNo']);
+                        // setState(() {
+                        //   //toggleSeatSelection(seat['seatNo']);
+                        //   seatColor=Colors.green;
+                        // });
+                        setState(() {
+                          if(!seats[index]['booked']){
+                            if (selectedSeats.contains(seat['seatNo'])) {
+                              selectedSeats.remove(seat['seatNo']);
+                            } else {
+                              selectedSeats.add(seat['seatNo']);
+                            }
+                          }
+                        });
+                      },
                       child: Container(
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: seatColor,
+                          color: selectedSeats.contains(seat['seatNo'])?
+                                Colors.green:seatColor,
                           borderRadius: BorderRadius.circular(5),
                           border: Border.all(color: Colors.black),
                         ),
+                        child: Center(child: Text("${seats[index]['seatNo']}",style: TextStyle(fontSize: 20,color: Colors.white),)),
                       ),
                     );
                   },
@@ -180,6 +238,6 @@ class _RedBusSeatUIState extends State<RedBusSeatUI> {
           ],
         ),
       ),
-    );
+    ):Center(child: CircularProgressIndicator(),);
   }
 }
