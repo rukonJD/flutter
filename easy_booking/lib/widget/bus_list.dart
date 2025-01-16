@@ -63,10 +63,19 @@ class BusListPage extends StatelessWidget {
                         children: [
                           // Bus Name and Number
                           Text(
-                            "Bus No: ${bus['busNo']}",
+                            "Bus Name: ${bus['operator']}",
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
+                              color: Color(0xffd44d57),
+                            ),
+                          ),
+                          SizedBox(height: 3),
+                          Text(
+                            "Bus No: ${bus['busNo']}",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w100,
                               color: Color(0xffd44d57),
                             ),
                           ),
@@ -79,7 +88,7 @@ class BusListPage extends StatelessWidget {
                           SizedBox(height: 3),
                           // Additional Information (e.g., Travel Time)
                           Text(
-                            "Travel Time: ${bus['arrivalDate'] ?? 'N/A'}",
+                            "Arrived: ${bus['arrivalDate'] ?? 'N/A'}",
                             style: TextStyle(fontSize: 14, color: Colors.white),
                           ),
                         ],
@@ -104,10 +113,11 @@ class BusListPage extends StatelessWidget {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => RedBusSeatUI(
+                                builder: (context) => SelectSeat(
                                     busId: bus['id'],
                                     date: bus['destinationDate'],
-                                    allseats: bus['seats']
+                                    allseats: bus['seats'],
+
                                 ),
                               ),
                             );

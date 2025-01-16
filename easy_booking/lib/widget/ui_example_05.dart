@@ -1,21 +1,22 @@
 import 'dart:convert';
 
+import 'package:easy_booking/widget/ticket_booking.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-class RedBusSeatUI extends StatefulWidget {
+class SelectSeat extends StatefulWidget {
   final int busId;
   final String date;
   final List allseats;
 
 
-  const RedBusSeatUI({Key? key, required this.busId, required this.date,required this.allseats}) : super(key: key);
+  const SelectSeat({Key? key, required this.busId, required this.date,required this.allseats}) : super(key: key);
 
   @override
   _RedBusSeatUIState createState() => _RedBusSeatUIState();
 }
 
-class _RedBusSeatUIState extends State<RedBusSeatUI> {
+class _RedBusSeatUIState extends State<SelectSeat> {
   List<Map<String, dynamic>> seats = [];
   List<int> selectedSeats = [];
   List selectedSit=[];
@@ -40,9 +41,9 @@ class _RedBusSeatUIState extends State<RedBusSeatUI> {
     });
 
     print("The fetched data :  ${decodeSeat[0].seatNo}");
-    
+
   }
-  
+
   void toggleSeatSelection(int seatId) {
     setState(() {
       var seat = seats.firstWhere((seat) => seat['seatNo'] == seatId);
@@ -54,6 +55,45 @@ class _RedBusSeatUIState extends State<RedBusSeatUI> {
         selectedSeats.remove(seatId);
       }
     });
+  }
+  // Function to navigate to the TicketBookPage
+  void navigateToTicketBooking() {
+    if (selectedSeats.isEmpty) {
+      // Show alert if no seats are selected
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text("No Seats Selected"),
+          content: Text("Please select at least one seat to proceed."),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text("OK"),
+            ),
+          ],
+        ),
+      );
+    } else {
+      // Calculate total fare based on the number of selected seats
+      double fare = 750.0;  // Replace with dynamic fare based on your logic
+      double totalFare = fare * selectedSeats.length;
+
+      // Navigate to TicketBookPage with selected seats, busId, and userId
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TicketBookPage(
+            selectedSeats: selectedSeats,
+            busId: widget.busId,
+            userId: 5001, // Replace with actual user ID (you can fetch it from a login state or pass it dynamically)
+            totalFare: totalFare,
+            noOfSeats: selectedSeats.length,
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> bookSeats() async {
@@ -151,7 +191,7 @@ class _RedBusSeatUIState extends State<RedBusSeatUI> {
   @override
   Widget build(BuildContext context) {
     return seats != null?
-      Scaffold(
+    Scaffold(
       appBar: AppBar(
         centerTitle: true,
         title: Text("Easy Booking"),
@@ -211,7 +251,7 @@ class _RedBusSeatUIState extends State<RedBusSeatUI> {
                         height: 40,
                         decoration: BoxDecoration(
                           color: selectedSeats.contains(seat['seatNo'])?
-                                Colors.green:seatColor,
+                          Colors.green:seatColor,
                           borderRadius: BorderRadius.circular(5),
                           border: Border.all(color: Colors.black),
                         ),
@@ -224,7 +264,7 @@ class _RedBusSeatUIState extends State<RedBusSeatUI> {
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: bookSeats, // Call bookSeats function
+              onPressed: navigateToTicketBooking, // Call bookSeats function
               style: ElevatedButton.styleFrom(
                 foregroundColor: Colors.white,
                 backgroundColor: Color(0xffd44d57),

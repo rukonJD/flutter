@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:easy_booking/widget/dismissible_flutter.dart';
-import 'package:easy_booking/widget/ui_example_03-a.dart';
+import 'package:easy_booking/widget/search_page.dart';
 
 import 'list_grid.dart';
 
@@ -29,7 +29,7 @@ class _Bottom_NavState extends State<Bottom_Nav_Redbus> {
       body: PageView(
         controller: pageController,
         children: [
-          UIEX03Ft(),
+          SearchPage(),
           Dismissible_Widget(),
           List_Grid(),
           List_Grid(),

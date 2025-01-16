@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'package:easy_booking/widget/ui_example_03-a.dart';
+import 'package:easy_booking/widget/search_page.dart';
+import 'package:easy_booking/widget/ui_example_03.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -41,7 +42,7 @@ class _LoginPageState extends State<LoginPage> {
           // Navigate to the search page after successful login
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => UIEX03Ft()),
+            MaterialPageRoute(builder: (context) => Bottom_Nav_Redbus()),
           );
         } else {
           setState(() {
