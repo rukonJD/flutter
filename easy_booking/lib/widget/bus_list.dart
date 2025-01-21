@@ -63,7 +63,7 @@ class BusListPage extends StatelessWidget {
                         children: [
                           // Bus Name and Number
                           Text(
-                            "Bus Name: ${bus['operator']}",
+                            "Bus : ${bus['operator']}",
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -116,7 +116,9 @@ class BusListPage extends StatelessWidget {
                                 builder: (context) => SelectSeat(
                                     busId: bus['id'],
                                     date: bus['destinationDate'],
+                                    fare: bus['price'],
                                     allseats: bus['seats'],
+                                  operator: bus['operator'],
 
                                 ),
                               ),

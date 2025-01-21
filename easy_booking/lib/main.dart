@@ -28,7 +28,7 @@ class MyApp extends StatelessWidget {
           brightness: Brightness.dark,
           primaryColor: Colors.blue
       ),
-      home: Bottom_Nav_Redbus(),
+      home: GetStartedPage(),
       // home: RedBusSeatUI(),
     );
   }

@@ -7,10 +7,19 @@ import 'package:http/http.dart' as http;
 class SelectSeat extends StatefulWidget {
   final int busId;
   final String date;
+  final int fare;
+  final String operator;
   final List allseats;
 
 
-  const SelectSeat({Key? key, required this.busId, required this.date,required this.allseats}) : super(key: key);
+  const SelectSeat({
+    Key? key,
+    required this.busId,
+    required this.date,
+    required this.fare,
+    required this.allseats,
+    required this.operator
+  }) : super(key: key);
 
   @override
   _RedBusSeatUIState createState() => _RedBusSeatUIState();
@@ -56,7 +65,7 @@ class _RedBusSeatUIState extends State<SelectSeat> {
       }
     });
   }
-  // Function to navigate to the TicketBookPage
+ // Function to navigate to the TicketBookPage
   void navigateToTicketBooking() {
     if (selectedSeats.isEmpty) {
       // Show alert if no seats are selected
@@ -77,7 +86,7 @@ class _RedBusSeatUIState extends State<SelectSeat> {
       );
     } else {
       // Calculate total fare based on the number of selected seats
-      double fare = 750.0;  // Replace with dynamic fare based on your logic
+      double fare = widget.fare as double;  // Replace with dynamic fare based on your logic
       double totalFare = fare * selectedSeats.length;
 
       // Navigate to TicketBookPage with selected seats, busId, and userId
@@ -90,6 +99,9 @@ class _RedBusSeatUIState extends State<SelectSeat> {
             userId: 5001, // Replace with actual user ID (you can fetch it from a login state or pass it dynamically)
             totalFare: totalFare,
             noOfSeats: selectedSeats.length,
+            fare: widget.fare,
+              bookSeats: bookSeats,
+            operator: widget.operator,
           ),
         ),
       );
@@ -147,45 +159,159 @@ class _RedBusSeatUIState extends State<SelectSeat> {
         }
       });
 
-      // After booking all seats, show a success message
-      Navigator.of(context).pop(); // Close the loading dialog
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text("Booking Successful"),
-          content: Text("All selected seats have been booked successfully."),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text("OK"),
-            ),
-          ],
-        ),
-      );
+      // // After booking all seats, show a success message
+      // Navigator.of(context).pop(); // Close the loading dialog
+      // showDialog(
+      //   context: context,
+      //   builder: (context) => AlertDialog(
+      //     title: Text("Booking Successful"),
+      //     content: Text("All selected seats have been booked successfully."),
+      //     actions: [
+      //       TextButton(
+      //         onPressed: () {
+      //           Navigator.of(context).pop();
+      //         },
+      //         child: Text("OK"),
+      //       ),
+      //     ],
+      //   ),
+      // );
     } catch (e) {
       // In case of any error
-      Navigator.of(context).pop(); // Close the loading dialog
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text("Booking Failed"),
-          content: Text("There was an issue with your booking. Please try again."),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text("OK"),
-            ),
-          ],
-        ),
-      );
+      // Navigator.of(context).pop(); // Close the loading dialog
+      // showDialog(
+      //   context: context,
+      //   builder: (context) => AlertDialog(
+      //     title: Text("Booking Failed"),
+      //     content: Text("There was an issue with your booking. Please try again."),
+      //     actions: [
+      //       TextButton(
+      //         onPressed: () {
+      //           Navigator.of(context).pop();
+      //         },
+      //         child: Text("OK"),
+      //       ),
+      //     ],
+      //   ),
+      // );
       print('Error: $e');
     }
     getSeats();
   }
+
+
+  // Future<void> handleBooking() async {
+  //   if (selectedSeats.isEmpty) {
+  //     // If no seats are selected, show a warning message
+  //     showDialog(
+  //       context: context,
+  //       builder: (context) => AlertDialog(
+  //         title: Text("No Seats Selected"),
+  //         content: Text("Please select at least one seat to proceed."),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () {
+  //               Navigator.of(context).pop();
+  //             },
+  //             child: Text("OK"),
+  //           ),
+  //         ],
+  //       ),
+  //     );
+  //     return; // Exit if no seats are selected
+  //   }
+  //
+  //   // Calculate total fare based on the selected seats
+  //   double totalFare = (widget.fare * selectedSeats.length) as double;
+  //
+  //   // Show a loading dialog or indicator before proceeding with booking
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) => AlertDialog(
+  //       title: Text("Booking Seats"),
+  //       content: CircularProgressIndicator(),
+  //     ),
+  //   );
+  //
+  //   try {
+  //     // Send a POST request for each selected seat
+  //     await Future.forEach(selectedSeats, (seatNo) async {
+  //       final url = 'http://localhost:8080/customer/api/book-seat';
+  //       final response = await http.post(
+  //         Uri.parse(url),
+  //         body: {
+  //           'busId': widget.busId.toString(),
+  //           'bookDate': widget.date,
+  //           'seatNo': seatNo.toString(),
+  //         },
+  //       );
+  //
+  //       // Handle the response for each seat
+  //       if (response.statusCode == 200) {
+  //         print("Seat $seatNo booked successfully.");
+  //       } else {
+  //         print("Failed to book seat $seatNo: ${response.body}");
+  //       }
+  //     });
+  //
+  //     // Close the loading dialog
+  //     Navigator.of(context).pop();
+  //
+  //     // Show a success message after booking
+  //     showDialog(
+  //       context: context,
+  //       builder: (context) => AlertDialog(
+  //         title: Text("Booking Successful"),
+  //         content: Text("All selected seats have been booked successfully."),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () {
+  //               Navigator.of(context).pop();
+  //               // After successful booking, navigate to the TicketBookPage
+  //               Navigator.push(
+  //                 context,
+  //                 MaterialPageRoute(
+  //                   builder: (context) => TicketBookPage(
+  //                     selectedSeats: selectedSeats,
+  //                     busId: widget.busId,
+  //                     userId: 5001, // Replace with actual user ID (you can fetch it dynamically)
+  //                     totalFare: totalFare,
+  //                     noOfSeats: selectedSeats.length,
+  //                     fare: widget.fare,
+  //                   ),
+  //                 ),
+  //               );
+  //             },
+  //             child: Text("OK"),
+  //           ),
+  //         ],
+  //       ),
+  //     );
+  //   } catch (e) {
+  //     // In case of an error, show an error message
+  //     Navigator.of(context).pop(); // Close the loading dialog
+  //     showDialog(
+  //       context: context,
+  //       builder: (context) => AlertDialog(
+  //         title: Text("Booking Failed"),
+  //         content: Text("There was an issue with your booking. Please try again."),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () {
+  //               Navigator.of(context).pop();
+  //             },
+  //             child: Text("OK"),
+  //           ),
+  //         ],
+  //       ),
+  //     );
+  //     print('Error: $e');
+  //   }
+  //
+  //   // Refresh the seat list after booking
+  //   getSeats();
+  // }
+
 
 
   @override

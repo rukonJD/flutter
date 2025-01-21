@@ -26,7 +26,7 @@ class BookingConfirmationPage extends StatelessWidget {
             Text('Ticket Details:', style: TextStyle(fontSize: 18)),
             SizedBox(height: 10),
             Text('Seats: ${ticketDetails['seats'].join(', ')}'),
-            Text('Fare: ₹${ticketDetails['fare']}'),
+            Text('Fare: ${ticketDetails['fare']}Tk'),
             Text('User: ${ticketDetails['ownerName']}'),
             SizedBox(height: 30),
             ElevatedButton(
